@@ -11,7 +11,6 @@ import hashlib
 import hmac
 import html
 import os
-import random
 import re
 import secrets
 import smtplib
@@ -86,6 +85,11 @@ def hash_pw(pw, salt=None):
 def cek_pw(pw, stored):
     salt, _ = stored.split("$", 1)
     return hmac.compare_digest(hash_pw(pw, salt), stored)
+
+
+def hash_int(seed, salt, n):
+    """Angka deterministik 0..n-1 dari hash SHA-256 (untuk data contoh, bukan PRNG)."""
+    return int.from_bytes(hashlib.sha256(f"{seed}|{salt}".encode()).digest()[:8], "big") % n
 
 
 def rp(n):
@@ -186,12 +190,12 @@ def gen_flights_for_date(db, d):
             base = 400_000 + (zlib.crc32(pair.encode()) % 900) * 1000
             dur = 60 + (zlib.crc32(pair.encode()) % 120)
             for i, jam in enumerate(SLOTS):
-                rng = random.Random(f"{a}{b}{ds}{i}")
-                nama, kode, fak = MASKAPAI[rng.randrange(len(MASKAPAI))]
-                harga = int(round(base * fak * rng.uniform(0.9, 1.25) / 1000) * 1000)
+                seed = f"{a}{b}{ds}{i}"
+                nama, kode, fak = MASKAPAI[hash_int(seed, "maskapai", len(MASKAPAI))]
+                harga = int(round(base * fak * (0.9 + hash_int(seed, "harga", 351) / 1000) / 1000) * 1000)
                 tiba = (datetime.strptime(jam, "%H:%M") + timedelta(minutes=dur)).strftime("%H:%M")
-                kursi = 0 if rng.random() < 0.04 else rng.randint(3, 40)
-                rows.append((f"{kode}{100 + rng.randrange(900)}", nama, a, b, ds, jam, tiba, harga, kursi))
+                kursi = 0 if hash_int(seed, "penuh", 100) < 4 else 3 + hash_int(seed, "kursi", 38)
+                rows.append((f"{kode}{100 + hash_int(seed, 'kode', 900)}", nama, a, b, ds, jam, tiba, harga, kursi))
     db.executemany("INSERT INTO flights(kode,maskapai,asal,tujuan,tanggal,jam_berangkat,jam_tiba,harga,kursi)"
                    " VALUES(?,?,?,?,?,?,?,?,?)", rows)
 
