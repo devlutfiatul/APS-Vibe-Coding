@@ -4,7 +4,7 @@ Aplikasi web: Modul HRD (cuti) + Modul Pemesanan Tiket Pesawat  (US-01 s/d US-13
 
 - Hanya memakai library bawaan Python 3.9+ (tanpa pip install).
 - Database: SQLite (file app.db dibuat otomatis, berisi data contoh).
-- Jalankan:   python app.py          lalu buka  http://127.0.0.1:8000
+- Jalankan:   python app.py          lalu buka alamat lokal port 8000 di browser
 - Reset data: python app.py --reset
 """
 import hashlib
@@ -1140,7 +1140,8 @@ def main():
     host = os.environ.get("HOST", "127.0.0.1")
     port = int(os.environ.get("PORT", "8000"))
     srv = make_server(host, port, app, server_class=ThreadedServer)
-    print(f"\nAplikasi berjalan.  Buka:  http://127.0.0.1:{port}   (atau http://localhost:{port})")
+    alamat = f"{host}:{port}"
+    print(f"\nAplikasi berjalan. Ketik di address bar browser:  {alamat}")
     print("Tekan Ctrl+C untuk berhenti.\n")
     try:
         srv.serve_forever()
